@@ -10,6 +10,11 @@ const MAX_POLLS = 60; // max 2 minutes
  */
 export async function uploadDocument(pdfBuffer: Buffer, filename = 'document.pdf'): Promise<string> {
     const config = getFoxitConfig('PDFSERVICES');
+
+    if (!config.clientId || !config.clientSecret) {
+        throw new Error(`[Foxit PDF Services] Missing credentials. Check Amplify Environment Variables for branch "${process.env.AWS_BRANCH || 'main'}". Ensure you have redeployed after adding them.`);
+    }
+
     const headers = getFoxitHeaders(config.clientId, config.clientSecret, config.applicationId);
     // Remove Content-Type from global headers for FormData compatibility
     const globalPdfHeaders = { ...headers };

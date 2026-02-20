@@ -18,8 +18,12 @@ export async function generateDocumentBase64(
     const config = getFoxitConfig('DOCGEN');
 
     if (!config.clientId || !config.clientSecret) {
-        console.error('[DocGen] Missing credentials:', { hasId: !!config.clientId, hasSecret: !!config.clientSecret });
-        throw new Error('Foxit DocGen credentials (CLIENT_ID or CLIENT_SECRET) are missing. Check your environment variables.');
+        // Detailed error for troubleshooting production environment
+        const missing = [];
+        if (!config.clientId) missing.push('CLIENT_ID');
+        if (!config.clientSecret) missing.push('CLIENT_SECRET');
+
+        throw new Error(`[Foxit DocGen] Missing ${missing.join(' and ')}. Check Amplify Environment Variables for branch "${process.env.AWS_BRANCH || 'main'}". Ensure you have redeployed after adding them.`);
     }
 
     const body = {
@@ -39,7 +43,7 @@ export async function generateDocumentBase64(
                 try {
                     return await makeDocGenRequest(fallback.clientId, fallback.clientSecret, fallback.applicationId, config.baseUrl, body);
                 } catch (fallbackError: any) {
-                    console.error('[DocGen] Fallback credentials failed as well.');
+                    console.error('[DocGen] Fallback credentials failed (401).');
                 }
             }
         }
@@ -48,8 +52,12 @@ export async function generateDocumentBase64(
             const status = error.response?.status;
             const errorData = error.response?.data;
             console.error(`[DocGen] API Error ${status}:`, JSON.stringify(errorData));
+
             if (status === 401) {
-                throw new Error('Foxit Authentication Failed. Please verify credentials in environment variables.');
+                throw new Error(`Foxit Authentication Failed (401). Please check if your Client ID (${config.clientId.substring(0, 8)}...) and Secret are correct and active in the Foxit Cloud Portal.`);
+            }
+            if (status === 403) {
+                throw new Error(`Foxit Permission Denied (403). Ensure Document Generation service is enabled for your application ID: ${config.applicationId}`);
             }
         }
         throw error;
@@ -69,7 +77,6 @@ async function makeDocGenRequest(clientId: string, clientSecret: string, appId: 
     );
 
     const data = response.data;
-    // Map various potential result keys from Foxit API
     const resultBase64 =
         data?.base64FileString ||
         data?.outputBase64 ||

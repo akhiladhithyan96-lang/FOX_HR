@@ -63,6 +63,21 @@ npm install
 npm run dev
 ```
 
+## 🌐 Deployment (AWS Amplify)
+
+When deploying to **AWS Amplify Hosting**, ensure you configure the following environment variables in the Amplify Console (**App Settings > Environment variables**):
+
+| Variable | Required |
+| :--- | :--- |
+| `FOXIT_DOCGEN_CLIENT_ID` | Yes |
+| `FOXIT_DOCGEN_CLIENT_SECRET` | Yes |
+| `FOXIT_DOCGEN_APPLICATION_ID` | Yes (UUID) |
+| `FOXIT_PDFSERVICES_CLIENT_ID` | Yes |
+| `FOXIT_PDFSERVICES_CLIENT_SECRET` | Yes |
+| `FOXIT_PDFSERVICES_APPLICATION_ID` | Yes (UUID) |
+
+**⚠️ IMPORTANT:** After adding or updating environment variables in the Amplify Console, you **MUST redeploy** your application (e.g., by pushing a new commit or choosing 'Redeploy this version') otherwise the changes will not be visible to the server-side code.
+
 ## 🔒 Security & Compliance
 Fox HR is built with a privacy-first mindset. Employee data travels through secure, encrypted API tunnels and is processed transiently by Foxit's high-performance servers. No PII (Personally Identifiable Information) is persisted on the backend beyond the processing session.
 
