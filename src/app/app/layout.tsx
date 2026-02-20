@@ -22,6 +22,7 @@ import {
     IconHistory,
     IconSettings,
     IconBolt,
+    IconFileTypePdf,
 } from '@tabler/icons-react';
 import { FoxLogoWithText } from '../../components/FoxLogo';
 import { PoweredByFoxit } from '../../components/PoweredByFoxit';
@@ -33,6 +34,7 @@ const NAV_ITEMS = [
     { href: '/app/packs', label: 'Onboarding Packs', icon: IconPackage },
     { href: '/app/bulk', label: 'Bulk Upload', icon: IconUsers },
     { href: '/app/history', label: 'Document History', icon: IconHistory },
+    { href: '/app/pdf-services', label: 'PDF Services', icon: IconFileTypePdf },
     { href: '/app/settings', label: 'Settings', icon: IconSettings },
 ];
 
