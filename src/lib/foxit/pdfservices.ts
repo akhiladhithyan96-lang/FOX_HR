@@ -57,7 +57,7 @@ export async function compressPDF(documentId: string): Promise<string> {
  * Password protect a PDF
  */
 export async function passwordProtectPDF(documentId: string, password: string): Promise<string> {
-    if (USE_MOCKS) return mockPasswordProtectPDF();
+    if (USE_MOCKS) return mockPasswordProtectPDF(documentId);
     throw new Error('Real PDF Services disabled in DEMO mode');
 }
 
@@ -65,7 +65,7 @@ export async function passwordProtectPDF(documentId: string, password: string): 
  * Add watermark to a PDF
  */
 export async function watermarkPDF(documentId: string, text: string): Promise<string> {
-    if (USE_MOCKS) return mockWatermarkPDF();
+    if (USE_MOCKS) return mockWatermarkPDF(documentId);
     throw new Error('Real PDF Services disabled in DEMO mode');
 }
 
@@ -73,7 +73,7 @@ export async function watermarkPDF(documentId: string, text: string): Promise<st
  * Add page numbers to a PDF
  */
 export async function addPageNumbers(documentId: string): Promise<string> {
-    if (USE_MOCKS) return mockAddPageNumbers();
+    if (USE_MOCKS) return mockAddPageNumbers(documentId);
     throw new Error('Real PDF Services disabled in DEMO mode');
 }
 
