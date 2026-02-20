@@ -1,20 +1,6 @@
 import axios from 'axios';
 import FormData from 'form-data';
 import { getFoxitConfig, getFoxitHeaders } from './config';
-import {
-    mockUploadDocument,
-    mockPollTaskUntilComplete,
-    mockDownloadDocument,
-    mockMergePDFs,
-    mockCompressPDF,
-    mockPasswordProtectPDF,
-    mockWatermarkPDF,
-    mockAddPageNumbers
-} from './mocks';
-
-// --- PRODUCTION CONFIG ---
-const USE_MOCKS = process.env.FOXIT_USE_MOCKS === 'true';
-// ------------------------
 
 const {
     clientId: CLIENT_ID,
@@ -24,6 +10,7 @@ const {
 } = getFoxitConfig('PDFSERVICES');
 
 const pdfServiceHeaders = getFoxitHeaders(CLIENT_ID, CLIENT_SECRET, APPLICATION_ID);
+
 // Remove Content-Type from global headers for FormData compatibility
 const globalPdfHeaders = { ...pdfServiceHeaders };
 delete globalPdfHeaders['Content-Type'];
@@ -35,8 +22,6 @@ const MAX_POLLS = 60; // max 2 minutes
  * Upload a PDF buffer to Foxit PDF Services and get a documentId
  */
 export async function uploadDocument(pdfBuffer: Buffer, filename = 'document.pdf'): Promise<string> {
-    if (USE_MOCKS) return mockUploadDocument();
-
     const formData = new FormData();
     formData.append('file', pdfBuffer, {
         filename,
@@ -65,8 +50,6 @@ export async function uploadDocument(pdfBuffer: Buffer, filename = 'document.pdf
  * Poll a task until COMPLETED, return resultDocumentId
  */
 export async function pollTaskUntilComplete(taskId: string): Promise<string> {
-    if (USE_MOCKS) return mockPollTaskUntilComplete(taskId);
-
     for (let i = 0; i < MAX_POLLS; i++) {
         await new Promise((resolve) => setTimeout(resolve, POLLING_INTERVAL));
 
@@ -95,8 +78,6 @@ export async function pollTaskUntilComplete(taskId: string): Promise<string> {
  * Download a document by ID and return as Buffer
  */
 export async function downloadDocument(documentId: string): Promise<Buffer> {
-    if (USE_MOCKS) return mockDownloadDocument();
-
     const response = await axios.get(
         `${PDFSERVICES_BASE_URL}/api/documents/${documentId}/download`,
         {
@@ -112,8 +93,6 @@ export async function downloadDocument(documentId: string): Promise<Buffer> {
  * Merge multiple documents into one PDF
  */
 export async function mergePDFs(documentIds: string[]): Promise<string> {
-    if (USE_MOCKS) return mockMergePDFs(documentIds);
-
     const response = await axios.post(
         `${PDFSERVICES_BASE_URL}/api/merge`,
         { documentIds },
@@ -129,8 +108,6 @@ export async function mergePDFs(documentIds: string[]): Promise<string> {
  * Compress a PDF
  */
 export async function compressPDF(documentId: string): Promise<string> {
-    if (USE_MOCKS) return mockCompressPDF(documentId);
-
     const response = await axios.post(
         `${PDFSERVICES_BASE_URL}/api/compress`,
         { documentId, compressionLevel: 'medium' },
@@ -146,8 +123,6 @@ export async function compressPDF(documentId: string): Promise<string> {
  * Password protect a PDF
  */
 export async function passwordProtectPDF(documentId: string, password: string): Promise<string> {
-    if (USE_MOCKS) return mockPasswordProtectPDF(documentId);
-
     const response = await axios.post(
         `${PDFSERVICES_BASE_URL}/api/security`,
         {
@@ -167,8 +142,6 @@ export async function passwordProtectPDF(documentId: string, password: string): 
  * Add watermark to a PDF
  */
 export async function watermarkPDF(documentId: string, text: string): Promise<string> {
-    if (USE_MOCKS) return mockWatermarkPDF(documentId);
-
     const response = await axios.post(
         `${PDFSERVICES_BASE_URL}/api/watermark`,
         { documentId, text, opacity: 0.3, position: 'center' },
@@ -184,8 +157,6 @@ export async function watermarkPDF(documentId: string, text: string): Promise<st
  * Add page numbers to a PDF
  */
 export async function addPageNumbers(documentId: string): Promise<string> {
-    if (USE_MOCKS) return mockAddPageNumbers(documentId);
-
     const response = await axios.post(
         `${PDFSERVICES_BASE_URL}/api/pagenumber`,
         { documentId },
@@ -201,8 +172,6 @@ export async function addPageNumbers(documentId: string): Promise<string> {
  * Convert PDF to PDF/A format for archival
  */
 export async function convertToPDFA(documentId: string): Promise<string> {
-    if (USE_MOCKS) return documentId;
-
     const response = await axios.post(
         `${PDFSERVICES_BASE_URL}/api/pdfa`,
         { documentId, conformance: 'pdfa-1b' },

@@ -1,22 +1,5 @@
 import axios from 'axios';
-import * as fs from 'fs';
-import * as path from 'path';
 import { getFoxitConfig, getFoxitHeaders } from './config';
-import { mockGenerateDocumentBase64, mockAnalyzeTemplate } from './mocks';
-
-// --- PRODUCTION CONFIG ---
-const USE_MOCKS = process.env.FOXIT_USE_MOCKS === 'true'; // Set to true in env for demo
-// ------------------------
-
-function logToFile(msg: string) {
-    const logPath = path.join(process.cwd(), 'docgen-debug.log');
-    const timestamp = new Date().toISOString();
-    try {
-        fs.appendFileSync(logPath, `[${timestamp}] ${msg}\n`);
-    } catch (e) {
-        console.error('Failed to log to file:', e);
-    }
-}
 
 const {
     clientId: DEFAULT_CLIENT_ID,
@@ -32,22 +15,15 @@ export interface DocGenResult {
 
 /**
  * Generate a document by sending a base64-encoded DOCX template + JSON data.
- * Returns base64-encoded PDF string.
+ * Returns base64-encoded PDF string (standard for Foxit DocGen Responses).
  */
 export async function generateDocumentBase64(
     templateBase64: string,
     documentValues: Record<string, string | number>,
     outputFormat: 'pdf' | 'docx' = 'pdf'
 ): Promise<string> {
-    if (USE_MOCKS) {
-        return mockGenerateDocumentBase64();
-    }
-
-    logToFile(`DocGen API call initiated to ${DOCGEN_BASE_URL}`);
-
     if (!DEFAULT_CLIENT_ID || !DEFAULT_CLIENT_SECRET) {
-        logToFile('ERROR: Missing credentials');
-        throw new Error('Foxit DocGen credentials (CLIENT_ID or CLIENT_SECRET) are missing. Check your .env.local or production secrets.');
+        throw new Error('Foxit DocGen credentials (CLIENT_ID or CLIENT_SECRET) are missing. Check your environment variables.');
     }
 
     const body = {
@@ -58,33 +34,26 @@ export async function generateDocumentBase64(
     };
 
     try {
-        logToFile(`Trying DocGen credentials...`);
         return await makeDocGenRequest(DEFAULT_CLIENT_ID, DEFAULT_CLIENT_SECRET, DEFAULT_APP_ID, body);
     } catch (error: any) {
+        // Fallback mechanism: If DocGen credentials fail, try PDF Services credentials (if they differ)
         if (axios.isAxiosError(error) && error.response?.status === 401) {
-            logToFile(`DocGen credentials failed (401). Trying fallback to PDF Services credentials...`);
-
             const fallback = getFoxitConfig('PDFSERVICES');
-
             if (fallback.clientId && fallback.clientId !== DEFAULT_CLIENT_ID) {
                 try {
-                    const result = await makeDocGenRequest(fallback.clientId, fallback.clientSecret, fallback.applicationId, body);
-                    logToFile(`Success with fallback credentials!`);
-                    return result;
+                    return await makeDocGenRequest(fallback.clientId, fallback.clientSecret, fallback.applicationId, body);
                 } catch (fallbackError: any) {
-                    logToFile(`Fallback failed as well.`);
+                    console.error('[DocGen] Fallback credentials failed as well.');
                 }
             }
         }
 
-        // If we reach here, both failed or only DocGen failed without valid fallback
         if (axios.isAxiosError(error)) {
             const status = error.response?.status;
             const errorData = error.response?.data;
-            logToFile(`API Error ${status}: ${JSON.stringify(errorData)}`);
-
+            console.error(`[DocGen] API Error ${status}:`, errorData);
             if (status === 401) {
-                throw new Error(`Foxit Authentication Failed (401). Using ID: ${DEFAULT_CLIENT_ID.substring(0, 8)}... and AppID: ${DEFAULT_APP_ID}. Please verify credentials in environment variables.`);
+                throw new Error('Foxit Authentication Failed. Please verify credentials in environment variables.');
             }
         }
         throw error;
@@ -95,8 +64,6 @@ export async function generateDocumentBase64(
  * Helper to make the actual API call with specific credentials
  */
 async function makeDocGenRequest(clientId: string, clientSecret: string, appId: string, body: any): Promise<string> {
-    logToFile(`Requesting with ClientID: ${clientId.substring(0, 8)}`);
-
     const response = await axios.post(
         `${DOCGEN_BASE_URL}/api/GenerateDocumentBase64`,
         body,
@@ -106,6 +73,7 @@ async function makeDocGenRequest(clientId: string, clientSecret: string, appId: 
     );
 
     const data = response.data;
+    // Map various potential result keys from Foxit API
     const resultBase64 =
         data?.base64FileString ||
         data?.outputBase64 ||
@@ -124,10 +92,6 @@ async function makeDocGenRequest(clientId: string, clientSecret: string, appId: 
  * Analyze a document template for text tags
  */
 export async function analyzeTemplate(templateBase64: string): Promise<Record<string, unknown>> {
-    if (USE_MOCKS) {
-        return mockAnalyzeTemplate();
-    }
-
     const body = {
         base64FileString: templateBase64,
     };
