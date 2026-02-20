@@ -1,0 +1,17 @@
+﻿--- Shotgun Testing Headers ---
+Testing with headers: client_id, client_secret
+Fail: 401 {"allow":false,"reason":"Invalid credentials"}
+Testing with headers: client-id, client-secret
+Fail: 400 {"allow":false,"reason":"Missing credentials: provide both 'client_id' and 'client_secret' headers."}
+Testing with headers: clientId, clientSecret
+Fail: 400 {"allow":false,"reason":"Missing credentials: provide both 'client_id' and 'client_secret' headers."}
+Testing with headers: x-client-id, x-client-secret
+Fail: 400 {"allow":false,"reason":"Missing credentials: provide both 'client_id' and 'client_secret' headers."}
+Testing with headers: x-api-key, x-api-secret
+Fail: 400 {"allow":false,"reason":"Missing credentials: provide both 'client_id' and 'client_secret' headers."}
+Testing with headers: client_id, client_secret, application-id
+Fail: 401 {"allow":false,"reason":"Invalid credentials"}
+Testing with headers: client_id, client_secret, application_id
+Fail: 401 {"allow":false,"reason":"Invalid credentials"}
+Testing with headers: app-id, client-id, client-secret
+Fail: 400 {"allow":false,"reason":"Missing credentials: provide both 'client_id' and 'client_secret' headers."}
