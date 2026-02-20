@@ -6,11 +6,20 @@ frontend:
         - npm ci
     build:
       commands:
+        # Capture environment variables for SSR runtime
+        - touch .env.production
+        - echo "FOXIT_DOCGEN_CLIENT_ID=$FOXIT_DOCGEN_CLIENT_ID" >> .env.production
+        - echo "FOXIT_DOCGEN_CLIENT_SECRET=$FOXIT_DOCGEN_CLIENT_SECRET" >> .env.production
+        - echo "FOXIT_DOCGEN_APPLICATION_ID=$FOXIT_DOCGEN_APPLICATION_ID" >> .env.production
+        - echo "FOXIT_PDFSERVICES_CLIENT_ID=$FOXIT_PDFSERVICES_CLIENT_ID" >> .env.production
+        - echo "FOXIT_PDFSERVICES_CLIENT_SECRET=$FOXIT_PDFSERVICES_CLIENT_SECRET" >> .env.production
+        - echo "FOXIT_PDFSERVICES_APPLICATION_ID=$FOXIT_PDFSERVICES_APPLICATION_ID" >> .env.production
+        - echo "NEXT_PUBLIC_COMPANY_NAME=$NEXT_PUBLIC_COMPANY_NAME" >> .env.production
         - npm run build
   artifacts:
     baseDirectory: .next
     files:
-      - '**/*'
+      - "**/*"
   cache:
     paths:
       - node_modules/**/*
