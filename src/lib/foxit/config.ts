@@ -29,10 +29,14 @@ export function getFoxitConfig(service: 'DOCGEN' | 'PDFSERVICES') {
         ? `${HOST}/document-generation`
         : `${HOST}/pdf-services`;
 
-    return {
+    const config = {
         clientId: clientId || '',
         clientSecret: clientSecret || '',
         applicationId: applicationId || '',
         baseUrl,
     };
+
+    console.log(`[Foxit Config] Service: ${service}, ClientID: ${config.clientId ? 'FIXED' : 'MISSING'}, Secret: ${config.clientSecret ? 'FIXED' : 'MISSING'}`);
+
+    return config;
 }
