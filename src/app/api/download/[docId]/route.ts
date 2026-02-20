@@ -3,10 +3,10 @@ import { downloadDocument } from '../../../../lib/foxit/pdfservices';
 
 export async function GET(
     req: NextRequest,
-    { params }: { params: { docId: string } }
+    { params }: { params: Promise<{ docId: string }> }
 ) {
     try {
-        const docId = params.docId;
+        const { docId } = await params;
 
         if (!docId) {
             return NextResponse.json({ error: 'Missing document ID' }, { status: 400 });
