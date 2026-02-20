@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { getFoxitConfig, getFoxitHeaders } from './config';
+import { getFoxitConfig } from './config';
 
 export interface DocGenResult {
     outputBase64: string;
@@ -7,7 +7,13 @@ export interface DocGenResult {
 }
 
 /**
- * Generate a document with heavy-duty error recovery and multi-strategy auth.
+ * Generate a document using Foxit Document Generation API.
+ * The API is synchronous: send template + data → get PDF back immediately.
+ * 
+ * Official API: POST /document-generation/api/GenerateDocumentBase64
+ * Headers: client_id, client_secret
+ * Body: { outputFormat, documentValues, base64FileString }
+ * Response: { message, fileExtension, base64FileString }
  */
 export async function generateDocumentBase64(
     templateBase64: string,
@@ -17,68 +23,86 @@ export async function generateDocumentBase64(
     const config = getFoxitConfig('DOCGEN');
 
     if (!config.clientId || !config.clientSecret) {
-        throw new Error(`[Foxit DocGen] Missing credentials. Please check Amplify env variables.`);
+        throw new Error(`[Foxit DocGen] Missing credentials. Check Amplify Environment Variables.`);
     }
 
+    // The exact body structure required by Foxit DocGen API
     const body = {
-        outputFormat: outputFormat.toLowerCase() === 'pdf' ? 'pdf' : 'docx',
-        currencyCulture: 'en-US',
+        outputFormat: 'pdf',
         documentValues,
         base64FileString: templateBase64,
     };
 
-    // Strategy 1: Standard Headers (The most common Fusion API method)
-    try {
-        console.log('[DocGen] Attempting Strategy 1: Standard Headers (No AppID)');
-        return await makeRequest(config.baseUrl, getFoxitHeaders(config.clientId, config.clientSecret, ''), body);
-    } catch (error: any) {
-        if (!axios.isAxiosError(error) || error.response?.status !== 401) throw error;
-        console.warn('[DocGen] Strategy 1 failed (401). Trying Strategy 2...');
-    }
+    // The exact headers required by Foxit DocGen API (no application-id needed)
+    const headers = {
+        'client_id': config.clientId,
+        'client_secret': config.clientSecret,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+    };
 
-    // Strategy 2: Standard Headers WITH Application ID
-    if (config.applicationId) {
-        try {
-            console.log('[DocGen] Attempting Strategy 2: Standard Headers + AppID');
-            return await makeRequest(config.baseUrl, getFoxitHeaders(config.clientId, config.clientSecret, config.applicationId), body);
-        } catch (error: any) {
-            if (!axios.isAxiosError(error) || error.response?.status !== 401) throw error;
-            console.warn('[DocGen] Strategy 2 failed (401). Trying Strategy 3...');
+    const url = `${config.baseUrl}/api/GenerateDocumentBase64`;
+
+    console.log(`[DocGen] Calling ${url} with client_id: ${config.clientId.substring(0, 8)}...`);
+
+    try {
+        const response = await axios.post(url, body, { headers, timeout: 60000 });
+        const data = response.data;
+
+        console.log('[DocGen] Response keys:', Object.keys(data || {}));
+
+        // Foxit API returns: { message: "success", fileExtension: "pdf", base64FileString: "..." }
+        const resultBase64 =
+            data?.base64FileString ||
+            data?.outputBase64 ||
+            data?.result ||
+            data?.data ||
+            data?.fileContent ||
+            data?.content;
+
+        if (!resultBase64) {
+            console.error('[DocGen] Unexpected response structure:', JSON.stringify(data).substring(0, 500));
+            throw new Error(`DocGen API succeeded but returned no document data. Response: ${JSON.stringify(data).substring(0, 200)}`);
         }
-    }
 
-    // Strategy 3: Basic Authentication
-    try {
-        console.log('[DocGen] Attempting Strategy 3: Basic Auth');
-        return await makeRequest(config.baseUrl, getFoxitHeaders(config.clientId, config.clientSecret, '', 'BASIC'), body);
+        console.log(`[DocGen] Success! Document size: ${resultBase64.length} base64 chars`);
+        return resultBase64;
+
     } catch (error: any) {
-        if (axios.isAxiosError(error) && error.response?.status === 401) {
-            console.error('[DocGen] All authentication strategies failed (401).');
-            throw new Error(`Foxit Authentication Failed (401). Please verify your Client ID (${config.clientId.substring(0, 8)}...) and Secret in the Foxit Cloud Portal. Also ensure the Document Generation service is ENABLED for your account.`);
+        if (axios.isAxiosError(error)) {
+            const status = error.response?.status;
+            const errorData = error.response?.data;
+            console.error(`[DocGen] HTTP ${status} Error:`, JSON.stringify(errorData));
+
+            if (status === 400) {
+                // Log the full error to understand what's wrong with the request
+                const errMsg = typeof errorData === 'string' ? errorData : JSON.stringify(errorData);
+                throw new Error(`DocGen API rejected the request (400). Details: ${errMsg}`);
+            }
+            if (status === 401) {
+                throw new Error(`Foxit Authentication Failed (401). Client ID: ${config.clientId.substring(0, 8)}... - Please verify credentials in Foxit Cloud Portal.`);
+            }
+            if (status === 403) {
+                throw new Error(`Foxit Permission Denied (403). Ensure Document Generation is enabled for Application ID: ${config.applicationId}`);
+            }
+            throw new Error(`DocGen API Error ${status}: ${JSON.stringify(errorData)}`);
         }
         throw error;
     }
 }
 
-async function makeRequest(baseUrl: string, headers: any, body: any): Promise<string> {
-    const response = await axios.post(
-        `${baseUrl}/api/GenerateDocumentBase64`,
-        body,
-        { headers, timeout: 30000 }
-    );
-
-    const data = response.data;
-    const resultBase64 = data?.base64FileString || data?.outputBase64 || data?.result || data?.data;
-
-    if (!resultBase64 && typeof data === 'string' && data.length > 100) return data;
-    if (!resultBase64) throw new Error('API returned successfully but no document data was found in the response.');
-
-    return resultBase64;
-}
-
 export async function analyzeTemplate(templateBase64: string): Promise<Record<string, unknown>> {
     const config = getFoxitConfig('DOCGEN');
-    const headers = getFoxitHeaders(config.clientId, config.clientSecret, config.applicationId);
-    const response = await axios.post(`${config.baseUrl}/api/AnalyzeDocument`, { base64FileString: templateBase64 }, { headers });
+    const headers = {
+        'client_id': config.clientId,
+        'client_secret': config.clientSecret,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+    };
+    const response = await axios.post(
+        `${config.baseUrl}/api/AnalyzeDocument`,
+        { base64FileString: templateBase64 },
+        { headers }
+    );
     return response.data;
 }
