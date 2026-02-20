@@ -1,13 +1,6 @@
 import axios from 'axios';
 import { getFoxitConfig, getFoxitHeaders } from './config';
 
-const {
-    clientId: DEFAULT_CLIENT_ID,
-    clientSecret: DEFAULT_CLIENT_SECRET,
-    applicationId: DEFAULT_APP_ID,
-    baseUrl: DOCGEN_BASE_URL
-} = getFoxitConfig('DOCGEN');
-
 export interface DocGenResult {
     outputBase64: string;
     outputFormat: string;
@@ -22,7 +15,10 @@ export async function generateDocumentBase64(
     documentValues: Record<string, string | number>,
     outputFormat: 'pdf' | 'docx' = 'pdf'
 ): Promise<string> {
-    if (!DEFAULT_CLIENT_ID || !DEFAULT_CLIENT_SECRET) {
+    const config = getFoxitConfig('DOCGEN');
+
+    if (!config.clientId || !config.clientSecret) {
+        console.error('[DocGen] Missing credentials:', { hasId: !!config.clientId, hasSecret: !!config.clientSecret });
         throw new Error('Foxit DocGen credentials (CLIENT_ID or CLIENT_SECRET) are missing. Check your environment variables.');
     }
 
@@ -34,14 +30,14 @@ export async function generateDocumentBase64(
     };
 
     try {
-        return await makeDocGenRequest(DEFAULT_CLIENT_ID, DEFAULT_CLIENT_SECRET, DEFAULT_APP_ID, body);
+        return await makeDocGenRequest(config.clientId, config.clientSecret, config.applicationId, config.baseUrl, body);
     } catch (error: any) {
         // Fallback mechanism: If DocGen credentials fail, try PDF Services credentials (if they differ)
         if (axios.isAxiosError(error) && error.response?.status === 401) {
             const fallback = getFoxitConfig('PDFSERVICES');
-            if (fallback.clientId && fallback.clientId !== DEFAULT_CLIENT_ID) {
+            if (fallback.clientId && fallback.clientId !== config.clientId) {
                 try {
-                    return await makeDocGenRequest(fallback.clientId, fallback.clientSecret, fallback.applicationId, body);
+                    return await makeDocGenRequest(fallback.clientId, fallback.clientSecret, fallback.applicationId, config.baseUrl, body);
                 } catch (fallbackError: any) {
                     console.error('[DocGen] Fallback credentials failed as well.');
                 }
@@ -51,7 +47,7 @@ export async function generateDocumentBase64(
         if (axios.isAxiosError(error)) {
             const status = error.response?.status;
             const errorData = error.response?.data;
-            console.error(`[DocGen] API Error ${status}:`, errorData);
+            console.error(`[DocGen] API Error ${status}:`, JSON.stringify(errorData));
             if (status === 401) {
                 throw new Error('Foxit Authentication Failed. Please verify credentials in environment variables.');
             }
@@ -63,9 +59,9 @@ export async function generateDocumentBase64(
 /**
  * Helper to make the actual API call with specific credentials
  */
-async function makeDocGenRequest(clientId: string, clientSecret: string, appId: string, body: any): Promise<string> {
+async function makeDocGenRequest(clientId: string, clientSecret: string, appId: string, baseUrl: string, body: any): Promise<string> {
     const response = await axios.post(
-        `${DOCGEN_BASE_URL}/api/GenerateDocumentBase64`,
+        `${baseUrl}/api/GenerateDocumentBase64`,
         body,
         {
             headers: getFoxitHeaders(clientId, clientSecret, appId)
@@ -92,14 +88,16 @@ async function makeDocGenRequest(clientId: string, clientSecret: string, appId: 
  * Analyze a document template for text tags
  */
 export async function analyzeTemplate(templateBase64: string): Promise<Record<string, unknown>> {
+    const config = getFoxitConfig('DOCGEN');
+
     const body = {
         base64FileString: templateBase64,
     };
 
-    const headers = getFoxitHeaders(DEFAULT_CLIENT_ID, DEFAULT_CLIENT_SECRET, DEFAULT_APP_ID);
+    const headers = getFoxitHeaders(config.clientId, config.clientSecret, config.applicationId);
 
     const response = await axios.post(
-        `${DOCGEN_BASE_URL}/api/AnalyzeDocument`,
+        `${config.baseUrl}/api/AnalyzeDocument`,
         body,
         { headers }
     );

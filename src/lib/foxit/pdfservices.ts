@@ -2,19 +2,6 @@ import axios from 'axios';
 import FormData from 'form-data';
 import { getFoxitConfig, getFoxitHeaders } from './config';
 
-const {
-    clientId: CLIENT_ID,
-    clientSecret: CLIENT_SECRET,
-    applicationId: APPLICATION_ID,
-    baseUrl: PDFSERVICES_BASE_URL
-} = getFoxitConfig('PDFSERVICES');
-
-const pdfServiceHeaders = getFoxitHeaders(CLIENT_ID, CLIENT_SECRET, APPLICATION_ID);
-
-// Remove Content-Type from global headers for FormData compatibility
-const globalPdfHeaders = { ...pdfServiceHeaders };
-delete globalPdfHeaders['Content-Type'];
-
 const POLLING_INTERVAL = 2000; // 2 seconds
 const MAX_POLLS = 60; // max 2 minutes
 
@@ -22,6 +9,12 @@ const MAX_POLLS = 60; // max 2 minutes
  * Upload a PDF buffer to Foxit PDF Services and get a documentId
  */
 export async function uploadDocument(pdfBuffer: Buffer, filename = 'document.pdf'): Promise<string> {
+    const config = getFoxitConfig('PDFSERVICES');
+    const headers = getFoxitHeaders(config.clientId, config.clientSecret, config.applicationId);
+    // Remove Content-Type from global headers for FormData compatibility
+    const globalPdfHeaders = { ...headers };
+    delete globalPdfHeaders['Content-Type'];
+
     const formData = new FormData();
     formData.append('file', pdfBuffer, {
         filename,
@@ -29,7 +22,7 @@ export async function uploadDocument(pdfBuffer: Buffer, filename = 'document.pdf
     });
 
     const response = await axios.post(
-        `${PDFSERVICES_BASE_URL}/api/documents/upload`,
+        `${config.baseUrl}/api/documents/upload`,
         formData,
         {
             headers: {
@@ -50,12 +43,15 @@ export async function uploadDocument(pdfBuffer: Buffer, filename = 'document.pdf
  * Poll a task until COMPLETED, return resultDocumentId
  */
 export async function pollTaskUntilComplete(taskId: string): Promise<string> {
+    const config = getFoxitConfig('PDFSERVICES');
+    const headers = getFoxitHeaders(config.clientId, config.clientSecret, config.applicationId);
+
     for (let i = 0; i < MAX_POLLS; i++) {
         await new Promise((resolve) => setTimeout(resolve, POLLING_INTERVAL));
 
         const response = await axios.get(
-            `${PDFSERVICES_BASE_URL}/api/tasks/${taskId}`,
-            { headers: pdfServiceHeaders }
+            `${config.baseUrl}/api/tasks/${taskId}`,
+            { headers }
         );
 
         const data = response.data;
@@ -78,10 +74,13 @@ export async function pollTaskUntilComplete(taskId: string): Promise<string> {
  * Download a document by ID and return as Buffer
  */
 export async function downloadDocument(documentId: string): Promise<Buffer> {
+    const config = getFoxitConfig('PDFSERVICES');
+    const headers = getFoxitHeaders(config.clientId, config.clientSecret, config.applicationId);
+
     const response = await axios.get(
-        `${PDFSERVICES_BASE_URL}/api/documents/${documentId}/download`,
+        `${config.baseUrl}/api/documents/${documentId}/download`,
         {
-            headers: pdfServiceHeaders,
+            headers,
             responseType: 'arraybuffer',
         }
     );
@@ -93,10 +92,13 @@ export async function downloadDocument(documentId: string): Promise<Buffer> {
  * Merge multiple documents into one PDF
  */
 export async function mergePDFs(documentIds: string[]): Promise<string> {
+    const config = getFoxitConfig('PDFSERVICES');
+    const headers = getFoxitHeaders(config.clientId, config.clientSecret, config.applicationId);
+
     const response = await axios.post(
-        `${PDFSERVICES_BASE_URL}/api/merge`,
+        `${config.baseUrl}/api/merge`,
         { documentIds },
-        { headers: { ...pdfServiceHeaders, 'Content-Type': 'application/json' } }
+        { headers: { ...headers, 'Content-Type': 'application/json' } }
     );
 
     const taskId = response.data?.taskId || response.data?.id;
@@ -108,10 +110,13 @@ export async function mergePDFs(documentIds: string[]): Promise<string> {
  * Compress a PDF
  */
 export async function compressPDF(documentId: string): Promise<string> {
+    const config = getFoxitConfig('PDFSERVICES');
+    const headers = getFoxitHeaders(config.clientId, config.clientSecret, config.applicationId);
+
     const response = await axios.post(
-        `${PDFSERVICES_BASE_URL}/api/compress`,
+        `${config.baseUrl}/api/compress`,
         { documentId, compressionLevel: 'medium' },
-        { headers: { ...pdfServiceHeaders, 'Content-Type': 'application/json' } }
+        { headers: { ...headers, 'Content-Type': 'application/json' } }
     );
 
     const taskId = response.data?.taskId || response.data?.id;
@@ -123,14 +128,17 @@ export async function compressPDF(documentId: string): Promise<string> {
  * Password protect a PDF
  */
 export async function passwordProtectPDF(documentId: string, password: string): Promise<string> {
+    const config = getFoxitConfig('PDFSERVICES');
+    const headers = getFoxitHeaders(config.clientId, config.clientSecret, config.applicationId);
+
     const response = await axios.post(
-        `${PDFSERVICES_BASE_URL}/api/security`,
+        `${config.baseUrl}/api/security`,
         {
             documentId,
             userPassword: password,
             ownerPassword: password,
         },
-        { headers: { ...pdfServiceHeaders, 'Content-Type': 'application/json' } }
+        { headers: { ...headers, 'Content-Type': 'application/json' } }
     );
 
     const taskId = response.data?.taskId || response.data?.id;
@@ -142,10 +150,13 @@ export async function passwordProtectPDF(documentId: string, password: string): 
  * Add watermark to a PDF
  */
 export async function watermarkPDF(documentId: string, text: string): Promise<string> {
+    const config = getFoxitConfig('PDFSERVICES');
+    const headers = getFoxitHeaders(config.clientId, config.clientSecret, config.applicationId);
+
     const response = await axios.post(
-        `${PDFSERVICES_BASE_URL}/api/watermark`,
+        `${config.baseUrl}/api/watermark`,
         { documentId, text, opacity: 0.3, position: 'center' },
-        { headers: { ...pdfServiceHeaders, 'Content-Type': 'application/json' } }
+        { headers: { ...headers, 'Content-Type': 'application/json' } }
     );
 
     const taskId = response.data?.taskId || response.data?.id;
@@ -157,10 +168,13 @@ export async function watermarkPDF(documentId: string, text: string): Promise<st
  * Add page numbers to a PDF
  */
 export async function addPageNumbers(documentId: string): Promise<string> {
+    const config = getFoxitConfig('PDFSERVICES');
+    const headers = getFoxitHeaders(config.clientId, config.clientSecret, config.applicationId);
+
     const response = await axios.post(
-        `${PDFSERVICES_BASE_URL}/api/pagenumber`,
+        `${config.baseUrl}/api/pagenumber`,
         { documentId },
-        { headers: { ...pdfServiceHeaders, 'Content-Type': 'application/json' } }
+        { headers: { ...headers, 'Content-Type': 'application/json' } }
     );
 
     const taskId = response.data?.taskId || response.data?.id;
@@ -172,10 +186,13 @@ export async function addPageNumbers(documentId: string): Promise<string> {
  * Convert PDF to PDF/A format for archival
  */
 export async function convertToPDFA(documentId: string): Promise<string> {
+    const config = getFoxitConfig('PDFSERVICES');
+    const headers = getFoxitHeaders(config.clientId, config.clientSecret, config.applicationId);
+
     const response = await axios.post(
-        `${PDFSERVICES_BASE_URL}/api/pdfa`,
+        `${config.baseUrl}/api/pdfa`,
         { documentId, conformance: 'pdfa-1b' },
-        { headers: { ...pdfServiceHeaders, 'Content-Type': 'application/json' } }
+        { headers: { ...headers, 'Content-Type': 'application/json' } }
     );
 
     const taskId = response.data?.taskId || response.data?.id;
