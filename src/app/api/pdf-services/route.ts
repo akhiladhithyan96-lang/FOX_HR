@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as pdfSvc from '../../../lib/foxit/pdfservices';
+import axios from 'axios';
 
 export async function POST(req: NextRequest) {
     try {
@@ -83,9 +84,20 @@ export async function POST(req: NextRequest) {
             operation
         });
 
-    } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : 'PDF Services operation failed';
-        console.error('[PDF Services API]', msg);
-        return NextResponse.json({ error: msg }, { status: 500 });
+    } catch (error: any) {
+        let msg = error instanceof Error ? error.message : 'PDF Services operation failed';
+
+        if (axios.isAxiosError(error)) {
+            console.error('[PDF Services API] Axios Error:', error.response?.status, error.response?.data);
+            if (error.response?.data) {
+                msg = `Foxit Error: ${JSON.stringify(error.response.data)}`;
+            }
+        }
+
+        console.error('[PDF Services API] Full Error:', error);
+        return NextResponse.json({
+            error: msg,
+            details: axios.isAxiosError(error) ? error.response?.data : undefined
+        }, { status: 500 });
     }
 }
