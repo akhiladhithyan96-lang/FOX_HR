@@ -43,7 +43,7 @@ export default function SettingsPage() {
             <Group justify="space-between" mb="xl">
                 <div>
                     <Title order={2} fw={800} c="#1A1A2E">Settings</Title>
-                    <Text c="dimmed" size="sm">Configure Fox HR and Foxit API credentials</Text>
+                    <Text c="dimmed" size="sm">Configure Fox HR company settings</Text>
                 </div>
                 <Badge size="lg" color="gray" variant="light">
                     <IconSettings size={14} style={{ marginRight: 4 }} />
@@ -88,74 +88,6 @@ export default function SettingsPage() {
                     </Group>
                 </Card>
 
-                {/* Foxit API Keys */}
-                <Card radius="lg" p="xl" style={{ border: '1px solid #E9EDF2' }}>
-                    <Group gap="sm" mb="md">
-                        <div style={{ width: 38, height: 38, borderRadius: 10, background: 'linear-gradient(135deg, #7C3AED, #5B21B6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <IconKey size={18} color="white" />
-                        </div>
-                        <div>
-                            <Text fw={700}>Foxit API Credentials</Text>
-                            <Text size="xs" c="dimmed">Set via .env.local — values shown for reference</Text>
-                        </div>
-                    </Group>
-
-                    <Alert icon={<IconBolt size={14} />} color="orange" variant="light" mb="md" radius="md">
-                        <Text size="xs">
-                            API credentials are configured via <code>.env.local</code> file for security.
-                            Never expose them in client-side code.
-                        </Text>
-                    </Alert>
-
-                    <Stack gap="md">
-                        <Divider label="Document Generation API" labelPosition="left" />
-                        <TextInput
-                            label="Base URL"
-                            value="https://na1.fusion.foxit.com/document-generation"
-                            readOnly
-                            styles={{ input: { fontFamily: 'monospace', fontSize: 12 } }}
-                        />
-                        <TextInput
-                            label="Client ID"
-                            value="foxit_YJg4jm0ZjcpJlCng"
-                            readOnly
-                            styles={{ input: { fontFamily: 'monospace', fontSize: 12 } }}
-                        />
-                        <TextInput
-                            label="Client Secret"
-                            value="••••••••••••••••••••••"
-                            readOnly
-                            type="password"
-                        />
-
-                        <Divider label="PDF Services API" labelPosition="left" />
-                        <TextInput
-                            label="Base URL"
-                            value="https://na1.fusion.foxit.com/pdf-services"
-                            readOnly
-                            styles={{ input: { fontFamily: 'monospace', fontSize: 12 } }}
-                        />
-                        <TextInput
-                            label="Client ID"
-                            value="foxit_jMN0yQRb-JP2HMyh"
-                            readOnly
-                            styles={{ input: { fontFamily: 'monospace', fontSize: 12 } }}
-                        />
-                        <TextInput
-                            label="Client Secret"
-                            value="••••••••••••••••••••••"
-                            readOnly
-                            type="password"
-                        />
-                    </Stack>
-
-                    <Group mt="md" gap="xs">
-                        <Text size="xs" c="dimmed">API Docs:</Text>
-                        <a href="https://docs.developer-api.foxit.com" target="_blank" rel="noopener noreferrer" style={{ color: '#E8590C', fontSize: 12 }}>
-                            docs.developer-api.foxit.com
-                        </a>
-                    </Group>
-                </Card>
 
                 {/* Data Privacy */}
                 <Card radius="lg" p="xl" style={{ border: '1px solid #E9EDF2', background: '#F8FBF8' }}>
