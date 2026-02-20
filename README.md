@@ -1,36 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🦊 HRFlow — Smart HR Documents, Delivered Instantly
 
-## Getting Started
+**HRFlow** is a powerful HR Document Automation platform built for the Foxit Document Automation Hackathon. It streamlines the entire employee onboarding workflow by transforming raw data into polished, professional, and secure document packages in seconds.
 
-First, run the development server:
+## 🚀 Pitch
+"Stop wasting hours manually editing HR templates. HRFlow automates the generation, merging, and delivery of entire onboarding packs, allowing HR teams to focus on people, not paperwork."
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## 🛠️ Architecture Overview
+The application follows a clean "Generate → Process → Deliver" flow powered exclusively by Foxit Cloud APIs:
+
+```text
+[ Input ] → [ Document Generation ] → [ PDF Processing ] → [ Integrated Pack ]
+   |                |                     |                    |
+Form Data/    Foxit DocGen API      Foxit PDF Services      Final Result
+CSV Upload    Injects JSON into     Merges, Compresses,     Delivery-ready
+              DOCX Templates        & Protects PDFs         Onboarding PDF
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 🛰️ API Usage Callouts
+- **Document Generation API**: Used to dynamically generate Offer Letters, NDAs, Policy Handbooks, Tax Declarations, and Appointment Letters. It maps employee JSON data (names, roles, salaries) into professional .docx templates and converts them to high-quality PDFs.
+- **PDF Services API**: Orchestrates the multi-step post-processing pipeline. It merges individual documents into a single consolidated pack, compresses the final file for email delivery, adds "Confidential" watermarks, and applies password protection using the employee's date of birth.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## ⚙️ Setup Instructions
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 1. Prerequisites
+- Node.js 18.x or 20.x
+- Foxit Developer Account (Client ID and Secret)
 
-## Learn More
+### 2. Environment Setup
+Create a `.env.local` file in the root directory:
+```bash
+# Foxit Document Generation API
+FOXIT_DOCGEN_CLIENT_ID=your_client_id
+FOXIT_DOCGEN_CLIENT_SECRET=your_client_secret
+FOXIT_DOCGEN_BASE_URL=https://na1.fusion.foxit.com/document-generation
 
-To learn more about Next.js, take a look at the following resources:
+# Foxit PDF Services API
+FOXIT_PDFSERVICES_CLIENT_ID=your_client_id
+FOXIT_PDFSERVICES_CLIENT_SECRET=your_client_secret
+FOXIT_PDFSERVICES_BASE_URL=https://na1.fusion.foxit.com/pdf-services
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Branding
+NEXT_PUBLIC_COMPANY_NAME=YourCompany
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 3. Install & Run
+```bash
+npm install
+npm run dev
+```
+Open [http://localhost:3000](http://localhost:3000) to view the application.
 
-## Deploy on Vercel
+## 🔒 Data Privacy Note
+HRFlow is built with privacy in mind. **No employee data is stored on our servers.**
+- All employee information and document metadata are stored locally in the browser's `localStorage`.
+- PDFs are generated transiently through Foxit's secure API endpoints and are not persisted beyond the user's session.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 📚 API Documentation Reference
+- [Foxit Developer Portal](https://developer-api.foxit.com)
+- [Foxit API Documentation](https://docs.developer-api.foxit.com)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+*Built for the Foxit Document Automation Hackathon 2026.*
